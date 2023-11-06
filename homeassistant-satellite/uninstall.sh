@@ -11,9 +11,9 @@ if [ -f "/lib/systemd/system/$PACKAGE_NAME.service" ]; then
 	systemctl daemon-reload
 fi
 
-echo "Cleaning up configuration..."
-if [ -d "/data/configuration/$PLUGIN_CATEGORY/$PACKAGE_NAME" ]; then
-	rm -Rf "/data/configuration/$PLUGIN_CATEGORY/$PACKAGE_NAME"
+echo "Cleaning up files..."
+if [ -d "/opt/$PACKAGE_NAME" ]; then
+	rm -Rf "/opt/$PACKAGE_NAME"
 fi
 
 # Uninstall dependendencies

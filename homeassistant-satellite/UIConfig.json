@@ -10,7 +10,7 @@
             "icon": "fa-server",
             "onSave": {
                 "type": "controller",
-                "endpoint": "miscellanea/homeassistant_satellite",
+                "endpoint": "audio_interface/homeassistant_satellite",
                 "method": "setUIConfig"
             },
             "saveButton": {
@@ -72,7 +72,7 @@
             "icon": "fa-microphone-lines",
             "onSave": {
                 "type": "controller",
-                "endpoint": "miscellanea/homeassistant_satellite",
+                "endpoint": "audio_interface/homeassistant_satellite",
                 "method": "setUIConfig"
             },
             "saveButton": {

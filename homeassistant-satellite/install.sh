@@ -70,11 +70,12 @@ script/setup
 .venv/bin/pip3 install .[wyoming]
 
 # Prepare service file
-touch $INSTALL_DIR/$PACKAGE_NAME.service
-ln -fs $INSTALL_DIR/$PACKAGE_NAME.service /lib/systemd/system/$PACKAGE_NAME.service
+touch $BASE_DIR/$PACKAGE_NAME.service
+ln -fs $BASE_DIR/$PACKAGE_NAME.service /lib/systemd/system/$PACKAGE_NAME.service
 
 # Change Owner of files to volumio
-chown -R volumio:volumio $INSTALL_DIR
+chown -R volumio:volumio "$INSTALL_DIR"
+chown -R volumio:volumio "$BASE_DIR"
 
 #requred to end the plugin install
 # echo "plugininstallend" # is called in the exit_cleanup function which is executed by a trap on exit

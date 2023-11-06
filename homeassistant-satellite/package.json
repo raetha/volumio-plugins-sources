@@ -7,27 +7,27 @@
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"author": "Raetha",
-	"license": "MIT", 
+	"license": "MIT",
 	"repository": "https://github.com/synesthesiam/homeassistant-satellite",
 	"volumio_info": {
-		"prettyName": "Home Assistant Satellite", 
-		"icon": "fa-home", 
-		"plugin_type": "audio_interface", 
+		"prettyName": "Home Assistant Satellite",
+		"icon": "fa-home",
+		"plugin_type": "audio_interface",
 		"architectures": [
 			"amd64",
 			"i386",
 			"arm64",
 			"armhf"
 		],
-		"os": [ 
+		"os": [
 			"bullseye"
 		],
-		"details": "Use Volumio as a Home Assistant Satellite",	
-		"changelog": "Initial Release" 
+		"details": "Use Volumio as a Home Assistant Satellite",
+		"changelog": "Initial Release"
 	},
 	"engines": {
 		"node": ">=14",
-		"volumio": ">=3" 
+		"volumio": ">=3"
 	},
 	"dependencies": {
 		"fs-extra": "^0.28.0",

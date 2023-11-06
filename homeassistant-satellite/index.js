@@ -156,13 +156,12 @@ homeassistant_satellite.prototype.updateServiceFile = function () {
 	var self = this;
 	var defer = libQ.defer();
 
-	var serviceFilePath = '/data/plugins/' + self.pluginType + '/' + self.pluginName + '/' + self.pluginName + '.service';
+	var baseDir = '/opt/' + self.pluginName + '/';
+	var serviceFilePath = baseDir + self.pluginName + '.service';
 	var serviceFile;
-
-	var distPath = '/data/plugins/' + self.pluginType + '/' + self.pluginName + '/dist/';
-	var exec_command = distPath + 'script/run';
-	var awake_sound = distPath + 'sounds/awake.wav';
-	var done_sound = distPath + 'sounds/done.wav';
+	var exec_command = baseDir + 'script/run';
+	var awake_sound = baseDir + 'sounds/awake.wav';
+	var done_sound = baseDir + 'sounds/done.wav';
 
 	var alsa_card = self.commandRouter.executeOnPlugin('audio_interface', 'ControllerAlsa', 'getConfigParam', 'outputdevicecardname');
 
@@ -199,7 +198,7 @@ homeassistant_satellite.prototype.updateServiceFile = function () {
 	serviceFile += '# --snd-device volumio \n';
 	serviceFile += '#--wake-word wyoming --wyoming-host <host> --wyoming-port <port> --wake-word-id <id>\n';
 	serviceFile += '#--pulseaudio --echo-cancel --ducking=0.2\n';
-	serviceFile += 'WorkingDirectory=' + distPath + '\n';
+	serviceFile += 'WorkingDirectory=' + baseDir + '\n';
 	serviceFile += 'Restart=always\n';
 	serviceFile += 'RestartSec=1\n';
 	serviceFile += '\n';
