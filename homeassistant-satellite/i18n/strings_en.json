@@ -1,0 +1,21 @@
+{
+	"LABELS":{
+		"PAGE":"Home Assistant Satellite Configuration",
+		"SECTION_SERVER":"Home Assistant Server",
+		"SECTION_OPTIONS":"Satellite Options",
+		"SAVE":"Save",
+		"HA_HOST":"Server Name/IP",
+		"HA_TOKEN":"Long-Lived Access Token",
+		"HA_PROTOCOL":"Web Protocol",
+		"VAD_TYPE":"VAD Type"
+	},
+	"DOCS":{
+		"HA_HOST": "This is the hostname or IP of your Home Assistant server",
+		"HA_TOKEN": "This is a Home Assistant long lived access token",
+		"HA_PROTOCOL": "Protocol to use when connecting with your Home Assistant server",
+		"VAD_TYPE": "Type of Voice Activity Detection to use: WebRTC or Silero"
+	},
+	"PLACEHOLDERS":{
+		"HA_HOST": "E.g. home.mydomain.com OR 192.168.0.10"
+	}
+}

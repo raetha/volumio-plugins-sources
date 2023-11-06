@@ -1,0 +1,108 @@
+{
+    "page": {
+        "label": "TRANSLATE.LABELS.PAGE"
+    },
+    "sections": [
+        {
+            "id": "server",
+            "element": "section",
+            "label": "TRANSLATE.LABELS.SECTION_SERVER",
+            "icon": "fa-server",
+            "onSave": {
+                "type": "controller",
+                "endpoint": "miscellanea/homeassistant_satellite",
+                "method": "setUIConfig"
+            },
+            "saveButton": {
+                "label": "TRANSLATE.LABELS.SAVE",
+                "data": [
+                    "ha_host",
+                    "ha_token",
+                    "ha_protocol"
+                ]
+            },
+            "content": [
+                {
+                    "id": "ha_host",
+                    "type": "text",
+                    "element": "input",
+                    "doc": "TRANSLATE.DOCS.HA_HOST",
+                    "label": "TRANSLATE.LABELS.HA_HOST",
+                    "value": "",
+                    "attributes": [
+                        {
+                            "placeholder": "TRANSLATE.PLACEHOLDERS.HA_HOST"
+                        }
+                    ]
+                },
+                {
+                    "id": "ha_token",
+                    "type": "password",
+                    "element": "input",
+                    "doc": "TRANSLATE.DOCS.HA_TOKEN",
+                    "label": "TRANSLATE.LABELS.HA_TOKEN",
+                    "value": ""
+                },
+                {
+                    "id": "ha_protocol",
+                    "element": "select",
+                    "doc": "TRANSLATE.DOCS.HA_PROTOCOL",
+                    "label": "TRANSLATE.LABELS.HA_PROTOCOL",
+                    "value": {
+                        "value": "http",
+                        "label": "HTTP"
+                    },
+                    "options": [
+                        {
+                            "value": "http",
+                            "label": "HTTP"
+                        },
+                        {
+                            "value": "https",
+                            "label": "HTTPS"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "options",
+            "element": "section",
+            "label": "TRANSLATE.LABELS.SECTION_OPTIONS",
+            "icon": "fa-microphone-lines",
+            "onSave": {
+                "type": "controller",
+                "endpoint": "miscellanea/homeassistant_satellite",
+                "method": "setUIConfig"
+            },
+            "saveButton": {
+                "label": "TRANSLATE.LABELS.SAVE",
+                "data": [
+                    "vad_type"
+                ]
+            },
+            "content": [
+                {
+                    "id": "vad_type",
+                    "element": "select",
+                    "doc": "TRANSLATE.DOCS.VAD_TYPE",
+                    "label": "TRANSLATE.LABELS.VAD_TYPE",
+                    "value": {
+                        "value": "webrtcvad",
+                        "label": "WebRTC"
+                    },
+                    "options": [
+                        {
+                            "value": "webrtcvad",
+                            "label": "WebRTC"
+                        },
+                        {
+                            "value": "silero",
+                            "label": "Silero"
+                        }
+                    ]
+                }
+	    ]
+	}
+    ]
+}

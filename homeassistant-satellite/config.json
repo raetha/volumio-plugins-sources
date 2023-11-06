@@ -1,0 +1,22 @@
+{
+	"enabled": {
+		"type": "boolean",
+		"value": false
+	},
+	"ha_host": {
+		"type": "string",
+		"value": ""
+	},
+	"ha_token": {
+		"type": "string",
+		"value": ""
+	},
+	"ha_protocol": {
+		"type": "string",
+		"value": "http"
+	},
+	"vad_type": {
+		"type": "string",
+		"value": "webrtcvad"
+	} 
+}
