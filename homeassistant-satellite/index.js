@@ -93,10 +93,21 @@ homeassistant_satellite.prototype.getUIConfig = function () {
 		__dirname + '/UIConfig.json')
 	.then(function(uiconf)
 	{
-		uiconf.sections[0].content[0].value = self.config.get('ha_host');
-		uiconf.sections[0].content[1].value = self.config.get('ha_token');
-		uiconf.sections[0].content[2].value.value = self.config.get('ha_protocol');
-		uiconf.sections[1].content[0].value.value = self.config.get('vad_type');
+		// Server section
+		const serverUIConf = uiconf.sections[0];
+		const haHost = self.config.get('ha_host');
+		const haToken = self.config.get('ha_token');
+		const haProtocol = self.config.get('ha_protocol');
+		const haProtocolOptions = serverUIConf.content[2].options;
+		serverUIConf.content[0].value = haHost; 
+		serverUIConf.content[1].value = haToken;
+		serverUIConf.content[2].value = haProtocolOptions.find((option) => option.value === haProtocol);
+
+		// Options section
+		const optionsUIConf = uiconf.sections[1];
+		const vadType = self.config.get('vad_type');
+		const vadTypeOptions = optionsUIConf.content[0].options;
+		optionsUIConf.content[0].value = vadTypeOptions.find((option) => option.value === vadType);
 
 		defer.resolve(uiconf);
 	})
@@ -162,8 +173,6 @@ homeassistant_satellite.prototype.updateServiceFile = function () {
 	var exec_command = baseDir + 'script/run';
 	var awake_sound = baseDir + 'sounds/awake.wav';
 	var done_sound = baseDir + 'sounds/done.wav';
-
-	var alsa_card = self.commandRouter.executeOnPlugin('audio_interface', 'ControllerAlsa', 'getConfigParam', 'outputdevicecardname');
 
 	var ha_host = self.config.get('ha_host', '');
 	var ha_token = self.config.get('ha_token', '');
