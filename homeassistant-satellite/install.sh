@@ -68,6 +68,7 @@ script/setup
 .venv/bin/pip3 install --find-links https://synesthesiam.github.io/prebuilt-apps/ .[silerovad]
 .venv/bin/pip3 install .[webrtc]
 .venv/bin/pip3 install .[wyoming]
+.venv/bin/pip3 install .[pulseaudio]
 
 # Prepare service file
 touch $BASE_DIR/$PACKAGE_NAME.service
