@@ -183,8 +183,8 @@ homeassistant_satellite.prototype.updateServiceFile = function () {
 
 	serviceFile  = '[Unit]\n';
 	serviceFile += 'Description=' + self.pluginPrettyName + '\n';
-	serviceFile += 'Wants=network-online.target\n';
-	serviceFile += 'After=network-online.target\n';
+	serviceFile += 'Wants=network-online.target headless_pulseaudio.service\n';
+	serviceFile += 'After=network-online.target headless_pulseaudio.service\n';
 	serviceFile += '\n';
 	serviceFile += '[Service]\n';
 	serviceFile += 'Type=simple\n';
@@ -197,16 +197,16 @@ homeassistant_satellite.prototype.updateServiceFile = function () {
 	serviceFile += ' --host ' + ha_host + ' \\\n';
 	serviceFile += ' --token ' + ha_token + ' \\\n';
 	serviceFile += ' --protocol ' + ha_protocol + ' \\\n';
+	serviceFile += '# --mic-device pulse \\\n';
+	serviceFile += '# --snd-device pulse \\\n';
 	serviceFile += ' --vad ' + vad_type + ' \\\n';
 	serviceFile += ' --awake-sound ' + awake_sound + ' \\\n';
 	serviceFile += ' --done-sound ' + done_sound + ' \\\n';
 	serviceFile += ' --noise-suppression 0 \\\n';
 	serviceFile += ' --auto-gain 0 \\\n';
-	serviceFile += ' --volume-multiplier 1.0 \n';
-	serviceFile += '# --mic-device volumio \\\n';
-	serviceFile += '# --snd-device volumio \n';
-	serviceFile += '#--wake-word wyoming --wyoming-host <host> --wyoming-port <port> --wake-word-id <id>\n';
-	serviceFile += '#--pulseaudio --echo-cancel --ducking=0.2\n';
+	serviceFile += ' --volume-multiplier 1.0 \\\n';
+	serviceFile += ' --pulseaudio --echo-cancel --ducking=0.2\n';
+	serviceFile += '# --wake-word wyoming --wyoming-host <host> --wyoming-port <port> --wake-word-id <id>\n';
 	serviceFile += 'WorkingDirectory=' + baseDir + '\n';
 	serviceFile += 'Restart=always\n';
 	serviceFile += 'RestartSec=1\n';
