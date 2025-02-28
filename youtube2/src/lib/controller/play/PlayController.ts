@@ -4,17 +4,17 @@ import libQ from 'kew';
 
 import yt2 from '../../YouTube2Context';
 import Model, { ModelType } from '../../model';
-import { EndpointType, WatchEndpoint } from '../../types/Endpoint';
+import { EndpointType, type WatchEndpoint } from '../../types/Endpoint';
 import { kewToJSPromise } from '../../util';
-import { ExplodedTrackInfo } from '../browse/view-handlers/ExplodableViewHandler';
-import { QueueItem } from '../browse/view-handlers/ExplodableViewHandler';
-import { VideoView } from '../browse/view-handlers/VideoViewHandler';
+import { type ExplodedTrackInfo } from '../browse/view-handlers/ExplodableViewHandler';
+import { type QueueItem } from '../browse/view-handlers/ExplodableViewHandler';
 import ViewHelper from '../browse/view-handlers/ViewHelper';
 import ExplodeHelper from '../../util/ExplodeHelper';
-import { GenericView } from '../browse/view-handlers/GenericViewHandler';
-import VideoPlaybackInfo from '../../types/VideoPlaybackInfo';
-import { ContentItem } from '../../types';
+import { type GenericView } from '../browse/view-handlers/GenericViewHandler';
+import type VideoPlaybackInfo from '../../types/VideoPlaybackInfo';
+import { type ContentItem } from '../../types';
 import EndpointHelper from '../../util/EndpointHelper';
+import EventEmitter from 'events';
 
 interface MpdState {
   status: 'play' | 'stop' | 'pause';
@@ -30,10 +30,21 @@ export default class PlayController {
     track: QueueItem;
     position: number;
   };
+  #prefetchPlaybackStateFixer: PrefetchPlaybackStateFixer | null;
 
   constructor() {
     this.#mpdPlugin = yt2.getMpdPlugin();
     this.#autoplayListener = null;
+    this.#prefetchPlaybackStateFixer = new PrefetchPlaybackStateFixer();
+    this.#prefetchPlaybackStateFixer.on('playPrefetch', (info: { track: QueueItem; position: number; }) => {
+      this.#lastPlaybackInfo = info;
+    });
+  }
+
+  reset() {
+    this.#removeAutoplayListener();
+    this.#prefetchPlaybackStateFixer?.reset();
+    this.#prefetchPlaybackStateFixer = null;
   }
 
   #addAutoplayListener() {
@@ -41,7 +52,7 @@ export default class PlayController {
       this.#autoplayListener = () => {
         this.#mpdPlugin.getState().then((state: MpdState) => {
           if (state.status === 'stop') {
-            this.#handleAutoplay();
+            void this.#handleAutoplay();
             this.#removeAutoplayListener();
           }
         });
@@ -65,7 +76,9 @@ export default class PlayController {
   async clearAddPlayTrack(track: QueueItem) {
     yt2.getLogger().info(`[youtube2-play] clearAddPlayTrack: ${track.uri}`);
 
-    const {videoId, info: playbackInfo} = await this.#getPlaybackInfoFromUri(track.uri);
+    this.#prefetchPlaybackStateFixer?.notifyPrefetchCleared();
+
+    const {videoId, info: playbackInfo} = await PlayController.getPlaybackInfoFromUri(track.uri);
     if (!playbackInfo) {
       throw Error(`Could not obtain playback info for videoId: ${videoId})`);
     }
@@ -76,19 +89,22 @@ export default class PlayController {
       throw Error(`Stream not found for videoId: ${videoId}`);
     }
 
-    track.title = playbackInfo.title || track.title;
-    track.name = playbackInfo.title || track.title;
-    track.artist = playbackInfo.author?.name || track.artist;
-    track.albumart = playbackInfo.thumbnail || track.albumart;
-    track.duration = playbackInfo.isLive ? 0 : playbackInfo.duration;
+    const sm = yt2.getStateMachine();
 
-    if (stream.bitrate) {
-      track.samplerate = stream.bitrate;
+    this.#updateTrackWithPlaybackInfo(track, playbackInfo);
+    if (playbackInfo.duration) {
+      /**
+       * Notes:
+       * - Ideally, we should have duration in `explodeTrackData` (set at browse time), but we didn't do this
+       *   plus there is no guarantee that duration is always available when browsing.
+       * - So we directly set `currentSongDuration` of statemachine -- required to trigger prefetch.
+       */
+      sm.currentSongDuration = playbackInfo.duration * 1000;
     }
 
     this.#lastPlaybackInfo = {
       track,
-      position: yt2.getStateMachine().getState().position
+      position: sm.getState().position
     };
 
     const safeStreamUrl = stream.url.replace(/"/g, '\\"');
@@ -100,12 +116,24 @@ export default class PlayController {
 
     if (yt2.getConfigValue('addToHistory')) {
       try {
-        playbackInfo.addToHistory();
+        void playbackInfo.addToHistory();
       }
       catch (error) {
         yt2.getLogger().error(yt2.getErrorMessage(`[youtube2-play] Error: could not add to history (videoId: ${videoId}): `, error));
       }
     }
+  }
+
+  #updateTrackWithPlaybackInfo(track: QueueItem, playbackInfo: VideoPlaybackInfo) {
+    track.title = playbackInfo.title || track.title;
+    track.name = playbackInfo.title || track.title;
+    track.artist = playbackInfo.author?.name || track.artist;
+    track.albumart = playbackInfo.thumbnail || track.albumart;
+    track.duration = playbackInfo.isLive ? 0 : playbackInfo.duration;
+    if (playbackInfo.stream?.bitrate) {
+      track.samplerate = playbackInfo.stream.bitrate;
+    }
+    return track;
   }
 
   // Returns kew promise!
@@ -145,23 +173,8 @@ export default class PlayController {
     return yt2.getStateMachine().previous();
   }
 
-  #getExplodedTrackInfoFromUri(uri: string): ExplodedTrackInfo | null {
-    if (!uri) {
-      return null;
-    }
-
-    const trackView = ViewHelper.getViewsFromUri(uri)[1] as VideoView;
-
-    if (!trackView || trackView.name !== 'video' ||
-      !EndpointHelper.isType(trackView.explodeTrackData?.endpoint, EndpointType.Watch)) {
-      return null;
-    }
-
-    return trackView.explodeTrackData;
-  }
-
-  async #getPlaybackInfoFromUri(uri: string): Promise<{videoId: string; info: VideoPlaybackInfo | null}> {
-    const watchEndpoint = this.#getExplodedTrackInfoFromUri(uri)?.endpoint;
+  static async getPlaybackInfoFromUri(uri: string): Promise<{videoId: string; info: VideoPlaybackInfo | null}> {
+    const watchEndpoint = ExplodeHelper.getExplodedTrackInfoFromUri(uri)?.endpoint;
     const videoId = watchEndpoint?.payload?.videoId;
     if (!videoId) {
       throw Error(`Invalid track uri: ${uri}`);
@@ -283,7 +296,7 @@ export default class PlayController {
   }
 
   async #getAutoplayItems() {
-    const lastPlayedEndpoint = this.#getExplodedTrackInfoFromUri(this.#lastPlaybackInfo?.track?.uri)?.endpoint;
+    const lastPlayedEndpoint = ExplodeHelper.getExplodedTrackInfoFromUri(this.#lastPlaybackInfo?.track?.uri)?.endpoint;
     const videoId = lastPlayedEndpoint?.payload?.videoId;
 
     if (!videoId) {
@@ -355,7 +368,7 @@ export default class PlayController {
 
     // 2. Related
     if (autoplayItems.length === 0 && relatedItems && autoplayPrefMixRelated) {
-      const relatedVideos = relatedItems.filter((item) => item.type === 'video') as ContentItem.Video[];
+      const relatedVideos = relatedItems.filter((item) => item.type === 'video');
       if (relatedVideos) {
         autoplayItems.push(...relatedVideos.map((item) => ExplodeHelper.getExplodedTrackInfoFromVideo(item)));
         yt2.getLogger().info(`[youtube2-play] Obtained ${autoplayItems.length} related videos for autoplay`);
@@ -387,14 +400,14 @@ export default class PlayController {
 
   async getGotoUri(type: 'album' | 'artist', uri: QueueItem['uri']): Promise<string | null> {
     if (type === 'album') {
-      const playlistId = this.#getExplodedTrackInfoFromUri(uri)?.endpoint?.payload?.playlistId;
+      const playlistId = ExplodeHelper.getExplodedTrackInfoFromUri(uri)?.endpoint?.payload?.playlistId;
       if (playlistId) {
         const targetView: GenericView = {
           name: 'generic',
           endpoint: {
             type: EndpointType.Browse,
             payload: {
-              browseId: (!playlistId.startsWith('VL') ? 'VL' : '') + playlistId
+              browseId: `${(!playlistId.startsWith('VL') ? 'VL' : '')}${playlistId}`
             }
           }
         };
@@ -402,7 +415,7 @@ export default class PlayController {
       }
     }
     else if (type === 'artist') {
-      const videoId = this.#getExplodedTrackInfoFromUri(uri)?.endpoint?.payload?.videoId;
+      const videoId = ExplodeHelper.getExplodedTrackInfoFromUri(uri)?.endpoint?.payload?.videoId;
       if (videoId) {
         const model = Model.getInstance(ModelType.Video);
         const playbackInfo = await model.getPlaybackInfo(videoId);
@@ -443,11 +456,12 @@ export default class PlayController {
     }
     let streamUrl;
     try {
-      const { videoId, info: playbackInfo } = await this.#getPlaybackInfoFromUri(track.uri);
+      const { videoId, info: playbackInfo } = await PlayController.getPlaybackInfoFromUri(track.uri);
       streamUrl = playbackInfo?.stream?.url;
-      if (!streamUrl) {
+      if (!streamUrl || !playbackInfo) {
         throw Error(`Stream not found for videoId '${videoId}'`);
       }
+      this.#updateTrackWithPlaybackInfo(track, playbackInfo);
     }
     catch (error: any) {
       yt2.getLogger().error(`[youtube2-play] Prefetch failed: ${error}`);
@@ -456,11 +470,114 @@ export default class PlayController {
     }
 
     const mpdPlugin = this.#mpdPlugin;
-    return kewToJSPromise(mpdPlugin.sendMpdCommand(`addid "${this.#appendTrackTypeToStreamUrl(streamUrl)}"`, [])
+    const res = await kewToJSPromise(mpdPlugin.sendMpdCommand(`addid "${this.#appendTrackTypeToStreamUrl(streamUrl)}"`, [])
       .then((addIdResp: { Id: string }) => this.#mpdAddTags(addIdResp, track))
       .then(() => {
         yt2.getLogger().info(`[youtube2-play] Prefetched and added track to MPD queue: ${track.name}`);
         return mpdPlugin.sendMpdCommand('consume 1', []);
       }));
+
+    this.#prefetchPlaybackStateFixer?.notifyPrefetched(track);
+
+    return res;
+  }
+}
+
+/**
+ * (Taken from YouTube Music plugin)
+ * https://github.com/patrickkfkan/volumio-ytmusic/blob/master/src/lib/controller/play/PlayController.ts
+ *
+ * Given state is updated by calling `setConsumeUpdateService('mpd', true)` (`consumeIgnoreMetadata`: true), when moving to
+ * prefetched track there's no guarantee the state machine will store the correct consume state obtained from MPD. It depends on
+ * whether the state machine increments `currentPosition` before or after MPD calls `pushState()`. The intended
+ * order is 'before' - but because the increment is triggered through a timer, it is possible that MPD calls `pushState()` first,
+ * thereby causing the state machine to store the wrong state info (title, artist, album...obtained from trackBlock at
+ * `currentPosition` which has not yet been incremented).
+ *
+ * See state machine `syncState()` and  `increasePlaybackTimer()`.
+ *
+ * `PrefetchPlaybackStateFixer` checks whether the state is consistent when prefetched track is played and `currentPosition` updated
+ * and triggers an MPD `pushState()` if necessary.
+ */
+class PrefetchPlaybackStateFixer extends EventEmitter {
+
+  #positionAtPrefetch: number;
+  #prefetchedTrack: QueueItem | null;
+  #volumioPushStateListener: ((state: any) => void) | null;
+
+  constructor() {
+    super();
+    this.#positionAtPrefetch = -1;
+    this.#prefetchedTrack = null;
+  }
+
+  reset() {
+    this.#removePushStateListener();
+    this.removeAllListeners();
+  }
+
+  notifyPrefetched(track: QueueItem) {
+    this.#positionAtPrefetch = yt2.getStateMachine().currentPosition;
+    this.#prefetchedTrack = track;
+    this.#addPushStateListener();
+  }
+
+  notifyPrefetchCleared() {
+    this.#removePushStateListener();
+  }
+
+  #addPushStateListener() {
+    if (!this.#volumioPushStateListener) {
+      this.#volumioPushStateListener = this.#handleVolumioPushState.bind(this);
+      yt2.volumioCoreCommand?.addCallback('volumioPushState', this.#volumioPushStateListener);
+    }
+  }
+
+  #removePushStateListener() {
+    if (this.#volumioPushStateListener) {
+      const listeners = yt2.volumioCoreCommand?.callbacks?.['volumioPushState'] || [];
+      const index = listeners.indexOf(this.#volumioPushStateListener);
+      if (index >= 0) {
+        yt2.volumioCoreCommand.callbacks['volumioPushState'].splice(index, 1);
+      }
+      this.#volumioPushStateListener = null;
+      this.#positionAtPrefetch = -1;
+      this.#prefetchedTrack = null;
+    }
+  }
+
+  #handleVolumioPushState(state: any) {
+    const sm = yt2.getStateMachine();
+    const currentPosition = sm.currentPosition as number;
+    if (sm.getState().service !== 'youtube2') {
+      this.#removePushStateListener();
+      return;
+    }
+    if (this.#positionAtPrefetch >= 0 && this.#positionAtPrefetch !== currentPosition) {
+      const track = sm.getTrack(currentPosition);
+      const pf = this.#prefetchedTrack;
+      this.#removePushStateListener();
+      if (track && state && pf && track.service === 'youtube2' && pf.uri === track.uri) {
+        if (state.uri !== track.uri) {
+          const mpdPlugin = yt2.getMpdPlugin();
+          mpdPlugin.getState().then((st: any) => mpdPlugin.pushState(st));
+        }
+        this.emit('playPrefetch', {
+          track: pf,
+          position: currentPosition
+        });
+      }
+    }
+  }
+
+  emit(event: 'playPrefetch', info: { track: QueueItem; position: number; }): boolean;
+  emit(event: string | symbol, ...args: any[]): boolean {
+    return super.emit(event, ...args);
+  }
+
+  on(event: 'playPrefetch', listener: (info: { track: QueueItem; position: number; }) => void): this;
+  on(event: string | symbol, listener: (...args: any[]) => void): this {
+    super.on(event, listener);
+    return this;
   }
 }

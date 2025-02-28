@@ -1,7 +1,9 @@
-import { QueueItem } from '../browse/view-handlers/ExplodableViewHandler';
+import { type QueueItem } from '../browse/view-handlers/ExplodableViewHandler';
+import type MusicItemPlaybackInfo from '../../types/MusicItemPlaybackInfo';
 export default class PlayController {
     #private;
     constructor();
+    reset(): void;
     /**
      * Track uri:
      * - ytmusic/[song|video]@@explodeTrackData={...}
@@ -14,6 +16,10 @@ export default class PlayController {
     seek(position: number): any;
     next(): any;
     previous(): any;
+    static getPlaybackInfoFromUri(uri: QueueItem['uri']): Promise<{
+        videoId: string;
+        info: MusicItemPlaybackInfo | null;
+    }>;
     prefetch(track: QueueItem): Promise<any>;
     getGotoUri(type: 'album' | 'artist', uri: QueueItem['uri']): Promise<string | null>;
 }

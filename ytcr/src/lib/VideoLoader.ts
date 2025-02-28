@@ -12,9 +12,10 @@ const ITAG_TO_BITRATE = {
   '140': '128',
   '141': '256',
   '171': '128',
-  '249': '50',
-  '250': '70',
-  '251': '160'
+  '249': 'VBR 50',
+  '250': 'VBR 70',
+  '251': 'VBR 160',
+  '774': 'VBR 256'
 } as Record<string, string>;
 
 const BEST_AUDIO_FORMAT = {
@@ -215,7 +216,7 @@ export default class VideoLoader {
       checkAbortSignal();
 
       // Wrap it in innertube VideoInfo.
-      const innertubeVideoInfo = new InnertubeLib.YT.VideoInfo([ playerResponse ], this.#innertube.actions, this.#innertube.session.player, cpn);
+      const innertubeVideoInfo = new InnertubeLib.YT.VideoInfo([ playerResponse ], this.#innertube.actions, cpn);
 
       const thumbnail = this.#getThumbnail(innertubeVideoInfo.basic_info.thumbnail);
       const isLive = !!innertubeVideoInfo.basic_info.is_live;
@@ -332,7 +333,7 @@ export default class VideoLoader {
     const audioBitrate = ITAG_TO_BITRATE[`${data.itag}`];
 
     return {
-      url: data.url,
+      url: data.url || null,
       mimeType: data.mime_type,
       bitrate: audioBitrate ? `${audioBitrate} kbps` : null,
       sampleRate: data.audio_sample_rate,

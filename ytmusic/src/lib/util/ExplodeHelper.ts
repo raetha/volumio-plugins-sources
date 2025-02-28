@@ -1,11 +1,12 @@
 import ytmusic from '../YTMusicContext';
-import { ExplodedTrackInfo, QueueItem } from '../controller/browse/view-handlers/ExplodableViewHandler';
-import { GenericView } from '../controller/browse/view-handlers/GenericViewHandler';
-import { MusicItemView } from '../controller/browse/view-handlers/MusicItemViewHandler';
-import View from '../controller/browse/view-handlers/View';
+import { type ExplodedTrackInfo, type QueueItem } from '../controller/browse/view-handlers/ExplodableViewHandler';
+import { type GenericView } from '../controller/browse/view-handlers/GenericViewHandler';
+import { type MusicItemView } from '../controller/browse/view-handlers/MusicItemViewHandler';
+import type View from '../controller/browse/view-handlers/View';
 import ViewHelper from '../controller/browse/view-handlers/ViewHelper';
-import { ContentItem } from '../types';
-import { EndpointType, WatchContinuationEndpoint, WatchEndpoint } from '../types/Endpoint';
+import { type ContentItem } from '../types';
+import { EndpointType, type WatchContinuationEndpoint, type WatchEndpoint } from '../types/Endpoint';
+import EndpointHelper from './EndpointHelper';
 
 export default class ExplodeHelper {
 
@@ -26,12 +27,31 @@ export default class ExplodeHelper {
     return result;
   }
 
+  static getExplodedTrackInfoFromUri(uri?: string | null): ExplodedTrackInfo | null {
+    if (!uri) {
+      return null;
+    }
+
+    const trackView = ViewHelper.getViewsFromUri(uri)[1] as MusicItemView;
+
+    if (!trackView || (trackView.name !== 'video' && trackView.name !== 'song') ||
+      !EndpointHelper.isType(trackView.explodeTrackData?.endpoint, EndpointType.Watch)) {
+      return null;
+    }
+
+    return trackView.explodeTrackData;
+  }
+
   static validateExplodeUri(uri: string) {
     // Current view
     const view = ViewHelper.getViewsFromUri(uri).pop();
 
     if (!view) {
       return false;
+    }
+
+    if (view.noExplode) {
+      return true;
     }
 
     /**
@@ -47,6 +67,9 @@ export default class ExplodeHelper {
       case 'album':
         // Endpoints object must exist (pre-v1.0 is just albumId / playlistId)
         return view.endpoints && typeof view.endpoints === 'object';
+
+      case 'podcast':
+        return true;
 
       case 'generic':
         // Endpoint must be an object (pre-v1.0 is stringified)
@@ -69,7 +92,7 @@ export default class ExplodeHelper {
    * @param {*} uri
    * @returns Converted URI or `null` on failure
    */
-  static async convertLegacyExplodeUri(uri: string) {
+  static convertLegacyExplodeUri(uri: string) {
     // Current view
     const view = ViewHelper.getViewsFromUri(uri).pop();
 
@@ -87,7 +110,7 @@ export default class ExplodeHelper {
       try {
         explodeTrackData = JSON.parse(decodeURIComponent(view.explodeTrackData));
       }
-      catch (error) {
+      catch (_error: unknown) {
         explodeTrackData = view.explodeTrackData;
       }
       if (typeof explodeTrackData !== 'object') {

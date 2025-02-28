@@ -15,6 +15,7 @@ const JellyfinContext_1 = __importDefault(require("../../../JellyfinContext"));
 const entities_1 = require("../../../entities");
 const ViewHandlerFactory_1 = __importDefault(require("./ViewHandlerFactory"));
 const ViewHelper_1 = __importDefault(require("./ViewHelper"));
+const models_1 = require("@jellyfin/sdk/lib/generated-client/models");
 class LibraryViewHandler extends BaseViewHandler_1.default {
     constructor() {
         super(...arguments);
@@ -28,22 +29,22 @@ class LibraryViewHandler extends BaseViewHandler_1.default {
         const listPromises = [
             __classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getTopItemList).call(this, libraryId, baseUri)
         ];
-        if (JellyfinContext_1.default.getConfigValue('showLatestMusicSection', true)) {
+        if (JellyfinContext_1.default.getConfigValue('showLatestMusicSection')) {
             listPromises.push(__classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getLatestMusic).call(this, libraryId, baseUri));
         }
-        if (JellyfinContext_1.default.getConfigValue('showRecentlyPlayedSection', true)) {
+        if (JellyfinContext_1.default.getConfigValue('showRecentlyPlayedSection')) {
             listPromises.push(__classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getRecentlyPlayed).call(this, libraryId, baseUri));
         }
-        if (JellyfinContext_1.default.getConfigValue('showFrequentlyPlayedSection', true)) {
+        if (JellyfinContext_1.default.getConfigValue('showFrequentlyPlayedSection')) {
             listPromises.push(__classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getFrequentlyPlayed).call(this, libraryId, baseUri));
         }
-        if (JellyfinContext_1.default.getConfigValue('showFavoriteArtistsSection', true)) {
+        if (JellyfinContext_1.default.getConfigValue('showFavoriteArtistsSection')) {
             listPromises.push(__classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getFavoriteArtists).call(this, libraryId, baseUri));
         }
-        if (JellyfinContext_1.default.getConfigValue('showFavoriteAlbumsSection', true)) {
+        if (JellyfinContext_1.default.getConfigValue('showFavoriteAlbumsSection')) {
             listPromises.push(__classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getFavoriteAlbums).call(this, libraryId, baseUri));
         }
-        if (JellyfinContext_1.default.getConfigValue('showFavoriteSongsSection', true)) {
+        if (JellyfinContext_1.default.getConfigValue('showFavoriteSongsSection')) {
             listPromises.push(__classPrivateFieldGet(this, _LibraryViewHandler_instances, "m", _LibraryViewHandler_getFavoriteSongs).call(this, libraryId, baseUri));
         }
         const lists = await Promise.all(listPromises);
@@ -135,14 +136,14 @@ _LibraryViewHandler_instances = new WeakSet(), _LibraryViewHandler_getTopItemLis
 }, _LibraryViewHandler_getLatestMusic = function _LibraryViewHandler_getLatestMusic(libraryId, baseUri) {
     const params = {
         parentId: libraryId,
-        sortBy: 'DateCreated,SortName',
-        sortOrder: 'Descending,Ascending',
-        limit: JellyfinContext_1.default.getConfigValue('latestMusicSectionItems', 11)
+        sortBy: [models_1.ItemSortBy.DateCreated, models_1.ItemSortBy.SortName],
+        sortOrder: [models_1.SortOrder.Descending, models_1.SortOrder.Ascending],
+        limit: JellyfinContext_1.default.getConfigValue('latestMusicSectionItems')
     };
     const albumView = {
         name: 'albums',
         parentId: libraryId,
-        sortBy: 'DateCreated,SortName',
+        sortBy: [models_1.ItemSortBy.DateCreated, models_1.ItemSortBy.SortName],
         sortOrder: 'Descending,Ascending',
         fixedView: 'latest'
     };
@@ -151,10 +152,10 @@ _LibraryViewHandler_instances = new WeakSet(), _LibraryViewHandler_getTopItemLis
 }, _LibraryViewHandler_getRecentlyPlayed = function _LibraryViewHandler_getRecentlyPlayed(libraryId, baseUri) {
     const params = {
         parentId: libraryId,
-        sortBy: 'DatePlayed,SortName',
-        sortOrder: 'Descending,Ascending',
+        sortBy: [models_1.ItemSortBy.DatePlayed, models_1.ItemSortBy.SortName],
+        sortOrder: [models_1.SortOrder.Descending, models_1.SortOrder.Ascending],
         filters: 'IsPlayed',
-        limit: JellyfinContext_1.default.getConfigValue('recentlyPlayedSectionItems', 5)
+        limit: JellyfinContext_1.default.getConfigValue('recentlyPlayedSectionItems')
     };
     const songView = {
         name: 'songs',
@@ -169,10 +170,10 @@ _LibraryViewHandler_instances = new WeakSet(), _LibraryViewHandler_getTopItemLis
 }, _LibraryViewHandler_getFrequentlyPlayed = function _LibraryViewHandler_getFrequentlyPlayed(libraryId, baseUri) {
     const params = {
         parentId: libraryId,
-        sortBy: 'PlayCount,SortName',
-        sortOrder: 'Descending,Ascending',
+        sortBy: [models_1.ItemSortBy.PlayCount, models_1.ItemSortBy.SortName],
+        sortOrder: [models_1.SortOrder.Descending, models_1.SortOrder.Ascending],
         filters: 'IsPlayed',
-        limit: JellyfinContext_1.default.getConfigValue('frequentlyPlayedSectionItems', 5)
+        limit: JellyfinContext_1.default.getConfigValue('frequentlyPlayedSectionItems')
     };
     const songView = {
         name: 'songs',
@@ -188,7 +189,7 @@ _LibraryViewHandler_instances = new WeakSet(), _LibraryViewHandler_getTopItemLis
     const params = {
         parentId: libraryId,
         filters: 'IsFavorite',
-        limit: JellyfinContext_1.default.getConfigValue('favoriteArtistsSectionItems', 5)
+        limit: JellyfinContext_1.default.getConfigValue('favoriteArtistsSectionItems')
     };
     const artistView = {
         name: 'artists',
@@ -202,7 +203,7 @@ _LibraryViewHandler_instances = new WeakSet(), _LibraryViewHandler_getTopItemLis
     const params = {
         parentId: libraryId,
         filters: 'IsFavorite',
-        limit: JellyfinContext_1.default.getConfigValue('favoriteAlbumsSectionItems', 5)
+        limit: JellyfinContext_1.default.getConfigValue('favoriteAlbumsSectionItems')
     };
     const albumView = {
         name: 'albums',
@@ -216,7 +217,7 @@ _LibraryViewHandler_instances = new WeakSet(), _LibraryViewHandler_getTopItemLis
     const params = {
         parentId: libraryId,
         filters: 'IsFavorite',
-        limit: JellyfinContext_1.default.getConfigValue('favoriteSongsSectionItems', 5)
+        limit: JellyfinContext_1.default.getConfigValue('favoriteSongsSectionItems')
     };
     const songView = {
         name: 'songs',

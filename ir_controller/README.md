@@ -10,11 +10,13 @@ Usually depending on the available keys of a particular remote typically (but no
 Currently the plugin ships with configurations for the following remote controls:
 
 * Accuphase RC-250
+* Aiyima T9 Pro
 * Apple Remote A1156 Alternative
 * Apple Remote A1156
 * Apple Remote A1294 Alternative
 * Apple Remote A1294
 * Arcam ir-DAC-II Remote
+* Argon Remote
 * Atrix Remote
 * Bluesound RC1
 * Copland RC-102A

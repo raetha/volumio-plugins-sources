@@ -1,7 +1,9 @@
-import { QueueItem } from '../browse/view-handlers/ExplodableViewHandler';
+import { type QueueItem } from '../browse/view-handlers/ExplodableViewHandler';
+import type VideoPlaybackInfo from '../../types/VideoPlaybackInfo';
 export default class PlayController {
     #private;
     constructor();
+    reset(): void;
     /**
      * Track uri:
      * - youtube2/video@endpoint={...}@explodeTrackData={...}
@@ -14,6 +16,10 @@ export default class PlayController {
     seek(position: number): any;
     next(): any;
     previous(): any;
+    static getPlaybackInfoFromUri(uri: string): Promise<{
+        videoId: string;
+        info: VideoPlaybackInfo | null;
+    }>;
     getGotoUri(type: 'album' | 'artist', uri: QueueItem['uri']): Promise<string | null>;
     prefetch(track: QueueItem): Promise<any>;
 }
